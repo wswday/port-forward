@@ -39,15 +39,19 @@ def server(address, address_dst):
             socket_dst = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             socket_dst.connect(address_dst)
 
-            threading.Thread(target=forward, args=(socket_src, socket_dst)).start()
-            threading.Thread(target=forward, args=(socket_dst, socket_src)).start()
+            stop_event = threading.Event()
+            threading.Thread(target=forward, args=('forward', socket_src, socket_dst, stop_event)).start()
+            threading.Thread(target=forward, args=('backword', socket_dst, socket_src, stop_event)).start()
     except Exception as e:
-        print(address, 'server ', e)
+        print('service', address, '->', address_dst, 'stop:', repr(e))
 
 
-def forward(source, destination):
-    try:
-        while True:
+def forward(direction, source, destination, stop_event):
+    source.settimeout(10)
+    destination.settimeout(10)
+    message = ''
+    while True:
+        try:
             buf = source.recv(4096)
             # print(len(buf))
 
@@ -57,8 +61,15 @@ def forward(source, destination):
                 source.shutdown(socket.SHUT_RD)
                 destination.shutdown(socket.SHUT_WR)
                 break
-    except Exception as e:
-        print('forward: ', e)
+        except socket.timeout:
+            if stop_event.is_set():
+                message = 'Stop by peer thread'
+                break
+        except Exception as e:
+            message = repr(e)
+            break
+    print(direction, 'stop:', message)
+    stop_event.set()
 
 
 if __name__ == '__main__':
