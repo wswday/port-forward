@@ -15,3 +15,7 @@
 
 ---
 All log will be write to log.txt
+
+
+## rforward.py 实现ssh -CNR [REMOTE_BIND_ADDRESS:]REMOTE_PORT:LOCAL_HOST:LOCAL_PORT USER@REMOTE_SERVER
+
